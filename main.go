@@ -25,7 +25,7 @@ func main() {
 
 		cmd := string(line)
 		if cmd == "bye" {
-			fmt.Println("bye!!")
+			fmt.Println("bye bye!!")
 			return
 		}
 		l := lexer.Lex(cmd)
@@ -34,9 +34,9 @@ func main() {
 		n := parser.Parse(l)
 		ret, err := vm.Eval(n)
 		if err != nil {
-			fmt.Printf("ERR> %s", err.Error())
+			fmt.Printf("ERR> %s\n", err.Error())
 		} else {
-			fmt.Printf("RET> %#v", ret)
+			fmt.Printf("RET> %#v\n", ret)
 		}
 	}
 }
