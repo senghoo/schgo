@@ -1,5 +1,7 @@
 package vm
 
+import "fmt"
+
 var basicfuncs = map[string]*function{
 	// numberic
 	"+": &function{true, nil, func(env *env, args []interface{}) (interface{}, error) {
@@ -133,8 +135,10 @@ var basicfuncs = map[string]*function{
 	"cons": &function{true, nil, func(env *env, args []interface{}) (interface{}, error) {
 		return &cons{args[0], args[1]}, nil
 	}},
-	"quote": &function{true, nil, func(env *env, args []interface{}) (interface{}, error) {
-		for 
+	"quote": &function{false, nil, func(env *env, args []interface{}) (interface{}, error) {
+		for idx, arg := range args {
+			fmt.Printf("arg %d%#v\n", idx, arg)
+		}
 		return nil, nil
 	}},
 	"cond": &function{true, nil, func(env *env, args []interface{}) (interface{}, error) {
