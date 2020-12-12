@@ -13,35 +13,48 @@ var basicfuncs = map[string]*typ.Func{
 		}
 		return typ.NewIntFromInt(sum), nil
 	}),
-	// "-": typ.NewFunc("",true, func(v typ.Val) (typ.Val, error) {
-	// 	var sum int
-	// 	for i, arg := range args {
-	// 		if i == 0 {
-	// 			sum += arg.(int)
-	// 		} else {
-	// 			sum -= arg.(int)
-	// 		}
-	// 	}
-	// 	return sum, nil
-	// }),
-	// "*": typ.NewFunc("",true, func(v typ.Val) (typ.Val, error) {
-	// 	var sum int = 1
-	// 	for _, arg := range args {
-	// 		sum *= arg.(int)
-	// 	}
-	// 	return sum, nil
-	// }),
-	// "/": typ.NewFunc("",true, func(v typ.Val) (typ.Val, error) {
-	// 	var sum int = 1
-	// 	for i, arg := range args {
-	// 		if i == 0 {
-	// 			sum += arg.(int)
-	// 		} else {
-	// 			sum /= arg.(int)
-	// 		}
-	// 	}
-	// 	return sum, nil
-	// }),
+	"-": typ.NewFunc("", true, func(v typ.Val) (typ.Val, error) {
+		var sum int
+		i := 0
+		for ; v != typ.Nil; v = v.(*typ.Cons).Cdr {
+			arg := v.(*typ.Cons)
+			num := arg.Car.(typ.Int)
+			n := num.Int()
+			if i == 0 {
+				sum += n
+			} else {
+				sum -= n
+			}
+			i++
+		}
+		return typ.NewIntFromInt(sum), nil
+	}),
+
+	"*": typ.NewFunc("", true, func(v typ.Val) (typ.Val, error) {
+		sum := 1
+		for ; v != typ.Nil; v = v.(*typ.Cons).Cdr {
+			arg := v.(*typ.Cons)
+			num := arg.Car.(typ.Int)
+			sum *= num.Int()
+		}
+		return typ.NewIntFromInt(sum), nil
+	}),
+	"/": typ.NewFunc("", true, func(v typ.Val) (typ.Val, error) {
+		sum := 1
+		i := 0
+		for ; v != typ.Nil; v = v.(*typ.Cons).Cdr {
+			arg := v.(*typ.Cons)
+			num := arg.Car.(typ.Int)
+			n := num.Int()
+			if i == 0 {
+				sum *= n
+			} else {
+				sum /= n
+			}
+			i++
+		}
+		return typ.NewIntFromInt(sum), nil
+	}),
 
 	// //compare
 	// ">": typ.NewFunc("",true, func(v typ.Val) (typ.Val, error) {
