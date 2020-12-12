@@ -222,7 +222,6 @@ func lexComment(l *Lexer) stateFn {
 }
 
 func lexNumber(l *Lexer) stateFn {
-	fmt.Printf("number!!")
 	if !l.scanNumber() {
 		return l.errorf("bad number syntax: %q", l.input[l.start:l.pos])
 	}

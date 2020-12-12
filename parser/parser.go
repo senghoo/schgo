@@ -4,19 +4,14 @@ import (
 	"fmt"
 	"go/token"
 	"ligo/lexer"
+	"ligo/typ"
 )
 
 type Node interface {
 	Type() NodeType
-	// Position() Pos
 	String() string
 	Copy() Node
-}
-
-type Pos int
-
-func (p Pos) Position() Pos {
-	return p
+	Val() typ.Val
 }
 
 type NodeType int
@@ -29,14 +24,17 @@ const (
 	NodeIdent NodeType = iota
 	NodeString
 	NodeNumber
-	NodeCall
+	NodeCons
 	NodeVector
 )
 
 type IdentNode struct {
-	// Pos
 	NodeType
 	Ident string
+}
+
+func (node *IdentNode) Val() typ.Val {
+	return typ.NewSymbol(node.Ident)
 }
 
 func (node *IdentNode) Copy() Node {
@@ -52,9 +50,12 @@ func (node *IdentNode) String() string {
 }
 
 type StringNode struct {
-	// Pos
 	NodeType
 	Value string
+}
+
+func (node *StringNode) Val() typ.Val {
+	return typ.NewString(node.Value)
 }
 
 func (node *StringNode) Copy() Node {
@@ -66,10 +67,13 @@ func (node *StringNode) String() string {
 }
 
 type NumberNode struct {
-	// Pos
 	NodeType
 	Value      string
 	NumberType token.Token
+}
+
+func (node *NumberNode) Val() typ.Val {
+	return typ.NewInt(node.Value)
 }
 
 func (node *NumberNode) Copy() Node {
@@ -81,9 +85,16 @@ func (node *NumberNode) String() string {
 }
 
 type VectorNode struct {
-	// Pos
 	NodeType
 	Nodes []Node
+}
+
+func (node *VectorNode) Val() typ.Val {
+	vals := make([]typ.Val, len(node.Nodes))
+	for i, x := range node.Nodes {
+		vals[i] = x.Val()
+	}
+	return typ.NewVect(vals)
 }
 
 func (node *VectorNode) Copy() Node {
@@ -98,24 +109,29 @@ func (node *VectorNode) String() string {
 	return fmt.Sprint(node.Nodes)
 }
 
-type CallNode struct {
-	// Pos
+type ConsNode struct {
 	NodeType
-	Callee Node
-	Args   []Node
+	Nodes []Node
 }
 
-func (node *CallNode) Copy() Node {
-	call := &CallNode{NodeType: node.Type(), Callee: node.Callee.Copy(), Args: make([]Node, len(node.Args))}
-	for i, v := range node.Args {
-		call.Args[i] = v.Copy()
+func (node *ConsNode) Copy() Node {
+	n := &ConsNode{NodeType: node.Type(), Nodes: make([]Node, len(node.Nodes))}
+	for i, v := range node.Nodes {
+		n.Nodes[i] = v.Copy()
 	}
-	return call
+	return n
 }
 
-func (node *CallNode) String() string {
-	args := fmt.Sprint(node.Args)
-	return fmt.Sprintf("(%s %s)", node.Callee, args[1:len(args)-1])
+func (node *ConsNode) Val() typ.Val {
+	vals := make([]typ.Val, len(node.Nodes))
+	for i, x := range node.Nodes {
+		vals[i] = x.Val()
+	}
+	return typ.NewCons(vals)
+}
+
+func (node *ConsNode) String() string {
+	return node.Val().String()
 }
 
 var nilNode = NewIdentNode("nil")
@@ -138,7 +154,7 @@ func parser(l *lexer.Lexer, tree []Node, lookingFor rune) []Node {
 		case lexer.ItemComplex:
 			tree = append(tree, newComplexNode(item.Value))
 		case lexer.ItemLeftParen:
-			tree = append(tree, newCallNode(parser(l, make([]Node, 0), ')')))
+			tree = append(tree, newConsNode(parser(l, make([]Node, 0), ')')))
 		case lexer.ItemLeftVect:
 			tree = append(tree, newVectNode(parser(l, make([]Node, 0), ']')))
 		case lexer.ItemRightParen:
@@ -183,9 +199,9 @@ func newComplexNode(val string) *NumberNode {
 }
 
 // We return Node here, because it could be that it's nil
-func newCallNode(args []Node) Node {
+func newConsNode(args []Node) Node {
 	if len(args) > 0 {
-		return &CallNode{NodeType: NodeCall, Callee: args[0], Args: args[1:]}
+		return &ConsNode{NodeType: NodeCons, Nodes: args}
 	} else {
 		return nilNode
 	}

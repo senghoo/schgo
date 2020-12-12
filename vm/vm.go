@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"ligo/parser"
+	"ligo/typ"
 	"strconv"
 )
 
@@ -88,7 +89,7 @@ func (v *VM) vec(env *env, vec []parser.Node) (interface{}, error) {
 	return nil, nil
 }
 
-func (v *VM) evalNode(env *env, node parser.Node) (interface{}, error) {
+func (v *VM) evalNode(env *env, node parser.Node) (typ.Val, error) {
 	switch node.Type() {
 	case parser.NodeIdent:
 		if val, ok := env.find(node.String()); ok {
@@ -100,9 +101,10 @@ func (v *VM) evalNode(env *env, node parser.Node) (interface{}, error) {
 		return node.String(), nil
 	case parser.NodeNumber:
 		return strconv.Atoi(node.String())
-	case parser.NodeCall:
-		c := node.(*parser.CallNode)
-		return v.call(env, c.Callee, c.Args)
+	case parser.NodeCons:
+		// c := node.(*parser.CallNode)
+		// return v.call(env, c.Callee, c.Args)
+		return nil, nil
 	case parser.NodeVector:
 		c := node.(*parser.VectorNode)
 		return v.vec(env, c.Nodes)

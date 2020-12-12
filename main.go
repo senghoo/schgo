@@ -28,10 +28,13 @@ func main() {
 			fmt.Println("bye bye!!")
 			return
 		}
-		l := lexer.Lex(cmd)
 		fmt.Println(cmd)
+		l := lexer.Lex(cmd)
 
 		n := parser.Parse(l)
+		for i, s := range n {
+			fmt.Printf("[PAR]\t%d\t: %s\n", i, s.Val().String())
+		}
 		ret, err := vm.Eval(n)
 		if err != nil {
 			fmt.Printf("ERR> %s\n", err.Error())
