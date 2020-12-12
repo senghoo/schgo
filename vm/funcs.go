@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"ligo/typ"
+	"strings"
 )
 
 func basicfuncs(vm *VM, e *env) map[string]*typ.Func {
@@ -244,7 +245,7 @@ func basicfuncs(vm *VM, e *env) map[string]*typ.Func {
 			}
 			return typ.Nil, nil
 		}),
-		"lambda": typ.NewFunc(e, "", false, func(lambdaRunEnv typ.ENV, v typ.Val) (typ.Val, error) {
+		"lambda": typ.NewCommand(e, "", false, func(lambdaRunEnv typ.ENV, v typ.Val) (typ.Val, error) {
 			if c, ok := v.(*typ.Cons); ok {
 				ld := c.ToArray()
 				if len(ld) != 2 {
@@ -260,8 +261,11 @@ func basicfuncs(vm *VM, e *env) map[string]*typ.Func {
 					return typ.Nil, errors.New("incorrect lambda")
 				}
 				return typ.NewFunc(lambdaRunEnv, "", true, func(lambdaRunEnv typ.ENV, v typ.Val) (typ.Val, error) {
+					fmt.Printf("[LAMBDA] lambda running\n")
+					fmt.Printf("[LAMBDA] args %s\n", v.String())
 					if ci, ok := v.(*typ.Cons); ok {
 						args := ci.ToArray()
+						fmt.Printf("[LAMBDA] args %s\n", ci.String())
 						if len(argN) != len(args) {
 							return typ.Nil, fmt.Errorf("require %d, but %d args", len(argN), len(args))
 						}
@@ -278,7 +282,7 @@ func basicfuncs(vm *VM, e *env) map[string]*typ.Func {
 			}
 			return typ.Nil, nil
 		}),
-		"setq": typ.NewFunc(e, "", false, func(le typ.ENV, v typ.Val) (typ.Val, error) {
+		"setq": typ.NewCommand(e, "", false, func(le typ.ENV, v typ.Val) (typ.Val, error) {
 			if c, ok := v.(*typ.Cons); ok {
 				ld := c.ToArray()
 				if len(ld) != 2 {
@@ -297,9 +301,41 @@ func basicfuncs(vm *VM, e *env) map[string]*typ.Func {
 			}
 			return typ.Nil, nil
 		}),
-		// "go": typ.NewFunc(e,"",true, func(le typ.ENV, v typ.Val) (typ.Val, error) {
-		//	return nil, nil
-		// }),
+
+		"display": typ.NewFunc(e, "", true, func(le typ.ENV, v typ.Val) (typ.Val, error) {
+			if c, ok := v.(*typ.Cons); ok {
+				ld := c.ToArray()
+				res := make([]string, len(ld))
+				for l, v := range ld {
+					res[l] = v.String()
+				}
+				fmt.Printf("STDOUT>>>>%s\n", strings.Join(res, ", "))
+			}
+			return typ.Nil, nil
+		}),
+		"go": typ.NewCommand(e, "", true, func(le typ.ENV, v typ.Val) (typ.Val, error) {
+			if c, ok := v.(*typ.Cons); ok {
+				ld := c.ToArray()
+				if len(ld) != 2 {
+					return typ.Nil, errors.New("incorrect go")
+				}
+				f := ld[0].(*typ.Func)
+				args := ld[1]
+				go func() {
+					_, err := f.Call(args)
+					if err != nil {
+						fmt.Println(err.Error())
+					}
+				}()
+			}
+			return typ.Nil, nil
+		}),
+		"begin": typ.NewCommand(e, "", false, func(le typ.ENV, v typ.Val) (typ.Val, error) {
+			if c, ok := v.(*typ.Cons); ok {
+				return vm.EvalListL(le.(*env), c)
+			}
+			return typ.Nil, nil
+		}),
 	}
 
 }

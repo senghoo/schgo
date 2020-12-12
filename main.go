@@ -8,6 +8,7 @@ import (
 	"ligo/parser"
 	"ligo/vm"
 	"os"
+	"time"
 )
 
 func processFile(fname string) string {
@@ -32,6 +33,7 @@ func main() {
 		} else {
 			fmt.Printf("RET> %s\n", ret.String())
 		}
+		time.Sleep(10 * time.Second)
 		return
 	}
 

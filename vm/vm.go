@@ -105,7 +105,11 @@ func (v *VM) call(env *env, callee typ.Val, args typ.Val) (typ.Val, error) {
 				return nil, err
 			}
 		}
-		return f.Call(args)
+		if f.IsCommand() {
+			return f.CallCommand(env, args)
+		} else {
+			return f.Call(args)
+		}
 	} else {
 		return nil, fmt.Errorf("got non function on call %#v", fv)
 	}

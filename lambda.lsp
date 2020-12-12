@@ -1,2 +1,4 @@
 (setq double (lambda (x) (* x 20)))
-(double 33)
+(display "abcd" 3333)
+(display (double 33))
+

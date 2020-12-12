@@ -114,6 +114,7 @@ type Func struct {
 	name     string
 	extract  bool
 	function func(ENV, Val) (Val, error)
+	command  bool
 }
 
 var lastLambda = 1
@@ -121,6 +122,7 @@ var lastLambda = 1
 type ENV interface {
 	Get(Symbol) (Val, bool)
 	Set(Symbol, Val)
+	NewWith(ENV) ENV
 }
 
 func NewFunc(e ENV, name string, extract bool, f func(ENV, Val) (Val, error)) *Func {
@@ -128,7 +130,18 @@ func NewFunc(e ENV, name string, extract bool, f func(ENV, Val) (Val, error)) *F
 		name = fmt.Sprintf("lambda#%d", lastLambda)
 		lastLambda++
 	}
-	return &Func{e, name, extract, f}
+	return &Func{e, name, extract, f, false}
+}
+func NewCommand(e ENV, name string, extract bool, f func(ENV, Val) (Val, error)) *Func {
+	if name == "" {
+		name = fmt.Sprintf("lambda#%d", lastLambda)
+		lastLambda++
+	}
+	return &Func{e, name, extract, f, true}
+}
+
+func (s Func) IsCommand() bool {
+	return s.command
 }
 
 func (s Func) String() string {
@@ -141,6 +154,14 @@ func (s *Func) Extract() bool {
 
 func (s *Func) Call(v Val) (Val, error) {
 	return s.function(s.env, v)
+}
+
+func (s *Func) CallWithEnv(e ENV, v Val) (Val, error) {
+	return s.function(s.env.NewWith(e), v)
+}
+
+func (s *Func) CallCommand(e ENV, v Val) (Val, error) {
+	return s.function(e, v)
 }
 
 func (s *Func) SetName(fname string) {
