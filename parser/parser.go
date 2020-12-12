@@ -130,6 +130,10 @@ func (node *ConsNode) Val() typ.Val {
 	return typ.NewCons(vals)
 }
 
+func (node *ConsNode) Cons() *typ.Cons {
+	return node.Val().(*typ.Cons)
+}
+
 func (node *ConsNode) String() string {
 	return node.Val().String()
 }

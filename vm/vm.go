@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"ligo/parser"
 	"ligo/typ"
-	"strconv"
 )
 
 type VM struct {
@@ -16,7 +15,8 @@ func NewVM() *VM {
 		env: newEnv(),
 	}
 	for k, v := range basicfuncs {
-		vm.env.vars[k] = v
+		v.SetName(k)
+		vm.env.vars[typ.NewSymbol(k)] = v
 	}
 	return vm
 }
@@ -24,90 +24,69 @@ func NewVM() *VM {
 type buildins struct {
 }
 
-func (v *VM) Eval(nodes []parser.Node) (interface{}, error) {
-	return v.eval(v.env, nodes)
-}
-
-func (v *VM) eval(env *env, nodes []parser.Node) (interface{}, error) {
-	var res interface{}
-	var err error
-	for _, node := range nodes {
-		res, err = v.evalNode(env, node)
-		if err != nil {
-			return nil, err
-		}
+func (v *VM) EvalNodes(nodes []parser.Node) (*typ.Cons, error) {
+	vars := make([]typ.Val, len(nodes))
+	for idx, node := range nodes {
+		vars[idx] = node.Val()
 	}
-	return res, nil
+	cons := typ.NewCons(vars).(*typ.Cons)
+	return v.EvalList(v.env, cons)
 }
 
-type function struct {
-	extract bool
-	env     *env
-	f       func(*env, []interface{}) (interface{}, error)
-}
-
-func (f *function) call(args []interface{}) (interface{}, error) {
-	return f.f(f.env, args)
-}
-
-func (v *VM) call(env *env, calleeNode parser.Node, argsNode []parser.Node) (interface{}, error) {
-	fmt.Printf("callee %#v\n", calleeNode)
-	fmt.Println("args")
-	for idx, arg := range argsNode {
-		fmt.Printf("arg %d:%#v\n", idx, arg)
-	}
-	fv, err := v.evalNode(env, calleeNode)
+func (v *VM) EvalList(env *env, cons *typ.Cons) (*typ.Cons, error) {
+	car, err := v.Eval(env, cons.Car)
 	if err != nil {
 		return nil, err
 	}
-	if f, ok := fv.(*function); ok {
-		args := make([]interface{}, len(argsNode))
-		for idx, arg := range argsNode {
-			var argn interface{}
-			if f.extract {
-				argn, err = v.evalNode(env, arg)
-				if err != nil {
-					return nil, err
-				}
-			} else {
-				argn = arg
-			}
-			args[idx] = argn
+	var cdr typ.Val
+	if c, ok := cons.Cdr.(*typ.Cons); ok {
+		cdr, err = v.EvalList(env, c)
+	} else {
+		cdr = typ.Nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return typ.MakeCons(car, cdr), nil
+}
+
+func (v *VM) Eval(env *env, cons typ.Val) (typ.Val, error) {
+	fmt.Printf("[VM]Eval: %#v\n", cons)
+	switch vv := cons.(type) {
+	case typ.Symbol:
+		if vv == typ.Nil {
+			return typ.Nil, nil
 		}
-		return f.call(args)
+		if val, ok := env.find(vv); ok {
+			return val, nil
+		} else {
+			return typ.Nil, fmt.Errorf("variable %s not defined", vv.String())
+		}
+	case typ.String, typ.Int, *typ.Vect:
+		return vv, nil
+	case *typ.Cons:
+		return v.call(env, vv.Car, vv.Cdr)
+	}
+	return nil, fmt.Errorf("unsupported operator %s", cons.String())
+}
+
+func (v *VM) call(env *env, callee typ.Val, args typ.Val) (typ.Val, error) {
+	fmt.Printf("[vm]callee %#s\n", callee.String())
+	fmt.Printf("[vm]args %#s\n", args.String())
+	fv, err := v.Eval(env, callee)
+	if err != nil {
+		return nil, err
+	}
+	if f, ok := fv.(*typ.Func); ok {
+		if f.Extract() && args != typ.Nil {
+			args, err = v.EvalList(env, args.(*typ.Cons))
+			if err != nil {
+				return nil, err
+			}
+		}
+		return f.Call(args)
 	} else {
 		return nil, fmt.Errorf("got non function on call %#v", fv)
 	}
 	return nil, nil
-}
-
-func (v *VM) vec(env *env, vec []parser.Node) (interface{}, error) {
-	fmt.Println("vecs")
-	for i, v := range vec {
-		fmt.Printf("[%d]%#v\n", i, v)
-	}
-	return nil, nil
-}
-
-func (v *VM) evalNode(env *env, node parser.Node) (typ.Val, error) {
-	switch node.Type() {
-	case parser.NodeIdent:
-		if val, ok := env.find(node.String()); ok {
-			return val, nil
-		} else {
-			return nil, fmt.Errorf("variable %s not defined", node.String())
-		}
-	case parser.NodeString:
-		return node.String(), nil
-	case parser.NodeNumber:
-		return strconv.Atoi(node.String())
-	case parser.NodeCons:
-		// c := node.(*parser.CallNode)
-		// return v.call(env, c.Callee, c.Args)
-		return nil, nil
-	case parser.NodeVector:
-		c := node.(*parser.VectorNode)
-		return v.vec(env, c.Nodes)
-	}
-	return nil, fmt.Errorf("unsupported operator %#v", node)
 }

@@ -4,26 +4,26 @@ import "ligo/typ"
 
 type env struct {
 	parent *env
-	vars   map[string]typ.Val
+	vars   map[typ.Symbol]typ.Val
 }
 
 func newEnv() *env {
 	env := &env{}
 	env.parent = env
-	env.vars = make(map[string]typ.Val)
+	env.vars = make(map[typ.Symbol]typ.Val)
 	return env
 }
 
-func (e *env) newEnv(vars ...map[string]typ.Val) *env {
+func (e *env) newEnv(vars ...map[typ.Symbol]typ.Val) *env {
 	n := &env{
 		parent: e,
-		vars:   make(map[string]typ.Val),
+		vars:   make(map[typ.Symbol]typ.Val),
 	}
 	mergeVars(n.vars, vars...)
 	return n
 }
 
-func (e *env) find(name string) (typ.Val, bool) {
+func (e *env) find(name typ.Symbol) (typ.Val, bool) {
 	if v, ok := e.vars[name]; ok {
 		return v, ok
 	}
@@ -34,6 +34,6 @@ func (e *env) find(name string) (typ.Val, bool) {
 	return e.parent.parent.find(name)
 }
 
-func (e *env) set(name string, val typ.Val) {
+func (e *env) set(name typ.Symbol, val typ.Val) {
 	e.vars[name] = val
 }

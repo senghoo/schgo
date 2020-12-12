@@ -35,7 +35,7 @@ func main() {
 		for i, s := range n {
 			fmt.Printf("[PAR]\t%d\t: %s\n", i, s.Val().String())
 		}
-		ret, err := vm.Eval(n)
+		ret, err := vm.EvalNodes(n)
 		if err != nil {
 			fmt.Printf("ERR> %s\n", err.Error())
 		} else {
