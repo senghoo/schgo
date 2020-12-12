@@ -1,6 +1,9 @@
 package vm
 
-import "ligo/typ"
+import (
+	"fmt"
+	"ligo/typ"
+)
 
 var basicfuncs = map[string]*typ.Func{
 	// numberic
@@ -56,100 +59,138 @@ var basicfuncs = map[string]*typ.Func{
 		return typ.NewIntFromInt(sum), nil
 	}),
 
-	// //compare
-	// ">": typ.NewFunc("",true, func(v typ.Val) (typ.Val, error) {
-	// 	var res bool = t
-	// 	var last int = args[0].(int)
-	// 	for _, arg := range args[1:] {
-	// 		if last > arg.(int) {
-	// 			last = arg.(int)
-	// 		} else {
-	// 			return n, nil
-	// 		}
-	// 	}
-	// 	return res, nil
-	// }),
-	// "<": typ.NewFunc("",true, func(v typ.Val) (typ.Val, error) {
-	// 	var res bool = t
-	// 	var last int = args[0].(int)
-	// 	for _, arg := range args[1:] {
-	// 		if last < arg.(int) {
-	// 			last = arg.(int)
-	// 		} else {
-	// 			return n, nil
-	// 		}
-	// 	}
-	// 	return res, nil
-	// }),
-	// ">=": typ.NewFunc("",true, func(v typ.Val) (typ.Val, error) {
-	// 	var res bool = t
-	// 	var last int = args[0].(int)
-	// 	for _, arg := range args[1:] {
-	// 		if last > arg.(int) {
-	// 			last = arg.(int)
-	// 		} else {
-	// 			return n, nil
-	// 		}
-	// 	}
-	// 	return res, nil
-	// }),
-	// "<=": typ.NewFunc("",true, func(v typ.Val) (typ.Val, error) {
-	// 	var res bool = t
-	// 	var last int = args[0].(int)
-	// 	for _, arg := range args[1:] {
-	// 		if last < arg.(int) {
-	// 			last = arg.(int)
-	// 		} else {
-	// 			return n, nil
-	// 		}
-	// 	}
-	// 	return res, nil
-	// }),
+	//compare
+	">": typ.NewFunc("", true, func(v typ.Val) (typ.Val, error) {
+		var res typ.Symbol = typ.Nil
+		var last int
+		if c, ok := v.(*typ.Cons); ok {
+			last = c.Car.(typ.Int).Int()
+			res = typ.T
+			for v = c.Cdr; v != typ.Nil; v = v.(*typ.Cons).Cdr {
+				arg := v.(*typ.Cons)
+				num := arg.Car.(typ.Int).Int()
+				if last > num {
+					last = num
+				} else {
+					return typ.Nil, nil
+				}
+			}
+		}
+		return res, nil
+	}),
+	"<": typ.NewFunc("", true, func(v typ.Val) (typ.Val, error) {
+		var res typ.Symbol = typ.Nil
+		var last int
+		if c, ok := v.(*typ.Cons); ok {
+			last = c.Car.(typ.Int).Int()
+			res = typ.T
+			for v = c.Cdr; v != typ.Nil; v = v.(*typ.Cons).Cdr {
+				arg := v.(*typ.Cons)
+				num := arg.Car.(typ.Int).Int()
+				if last < num {
+					last = num
+				} else {
+					return typ.Nil, nil
+				}
+			}
+		}
+		return res, nil
+	}),
+	">=": typ.NewFunc("", true, func(v typ.Val) (typ.Val, error) {
+		var res typ.Symbol = typ.Nil
+		var last int
+		if c, ok := v.(*typ.Cons); ok {
+			last = c.Car.(typ.Int).Int()
+			res = typ.T
+			for v = c.Cdr; v != typ.Nil; v = v.(*typ.Cons).Cdr {
+				arg := v.(*typ.Cons)
+				num := arg.Car.(typ.Int).Int()
+				if last >= num {
+					last = num
+				} else {
+					return typ.Nil, nil
+				}
+			}
+		}
+		return res, nil
+	}),
 
-	// //sim func
-	// "abs": typ.NewFunc("",true, func(v typ.Val) (typ.Val, error) {
+	"<=": typ.NewFunc("", true, func(v typ.Val) (typ.Val, error) {
+		var res typ.Symbol = typ.Nil
+		var last int
+		if c, ok := v.(*typ.Cons); ok {
+			last = c.Car.(typ.Int).Int()
+			res = typ.T
+			for v = c.Cdr; v != typ.Nil; v = v.(*typ.Cons).Cdr {
+				arg := v.(*typ.Cons)
+				num := arg.Car.(typ.Int).Int()
+				if last <= num {
+					last = num
+				} else {
+					return typ.Nil, nil
+				}
+			}
+		}
+		return res, nil
+	}),
+	// boolean
+	"and": typ.NewFunc("", true, func(v typ.Val) (typ.Val, error) {
+		var last typ.Val
+		if v == typ.Nil {
+			return typ.Nil, nil
+		}
+		for ; v != typ.Nil; v = v.(*typ.Cons).Cdr {
+			arg := v.(*typ.Cons)
+			last = arg.Car
+			if arg.Car == typ.Nil {
+				return typ.Nil, nil
+			}
+		}
+		return last, nil
+	}),
 
-	// 	var res int = args[0].(int)
-	// 	if res > 0 {
-	// 		return res, nil
-	// 	} else {
-	// 		return -res, nil
-	// 	}
-	// }),
+	"or": typ.NewFunc("", true, func(v typ.Val) (typ.Val, error) {
+		if v == typ.Nil {
+			return typ.Nil, nil
+		}
+		for ; v != typ.Nil; v = v.(*typ.Cons).Cdr {
+			arg := v.(*typ.Cons)
+			if arg.Car != typ.Nil {
+				return arg.Car, nil
+			}
+		}
+		return typ.Nil, nil
+	}),
 
-	// "eq": typ.NewFunc("",true, func(v typ.Val) (typ.Val, error) {
-	// 	var res bool = t
-	// 	last := args[0]
-	// 	for _, arg := range args[1:] {
-	// 		if last == arg {
-	// 			last = arg
-	// 		} else {
-	// 			return n, nil
-	// 		}
-	// 	}
-	// 	return res, nil
-	// }),
+	"car": typ.NewFunc("", true, func(v typ.Val) (typ.Val, error) {
+		if c, ok := v.(*typ.Cons); ok {
+			if c1, ok := c.Car.(*typ.Cons); ok {
+				return c1.Car, nil
+			}
+		}
+		return typ.Nil, nil
+	}),
+	"cdr": typ.NewFunc("", true, func(v typ.Val) (typ.Val, error) {
+		if c, ok := v.(*typ.Cons); ok {
+			if c1, ok := c.Car.(*typ.Cons); ok {
+				return c1.Cdr, nil
+			}
+		}
+		return typ.Nil, nil
+	}),
 
-	// "car": typ.NewFunc("",true, func(v typ.Val) (typ.Val, error) {
-	// 	c, ok := args[0].(*cons)
-	// 	if ok {
-	// 		return c.car, nil
-	// 	} else {
-	// 		return n, nil
-	// 	}
-
-	// }),
-	// "cdr": typ.NewFunc("",true, func(v typ.Val) (typ.Val, error) {
-	// 	c, ok := args[0].(*cons)
-	// 	if ok {
-	// 		return c.cdr, nil
-	// 	} else {
-	// 		return n, nil
-	// 	}
-	// }),
-	// "cons": typ.NewFunc("",true, func(v typ.Val) (typ.Val, error) {
-	// 	return &cons{args[0], args[1]}, nil
-	// }),
+	"cons": typ.NewFunc("", true, func(v typ.Val) (typ.Val, error) {
+		if c, ok := v.(*typ.Cons); ok {
+			arg1 := c.Car
+			if c2, ok := c.Car.(*typ.Cons); ok {
+				nc := typ.MakeCons(arg1, c2.Cdr)
+				fmt.Println("xxxxx")
+				fmt.Println(nc.String())
+				return nc, nil
+			}
+		}
+		return typ.Nil, nil
+	}),
 	// "quote": typ.NewFunc("",false, nil, func(v typ.Val) (typ.Val, error) {
 	// 	for idx, arg := range args {
 	// 		fmt.Printf("arg %d%#v\n", idx, arg)
