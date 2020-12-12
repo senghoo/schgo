@@ -14,7 +14,7 @@ func NewVM() *VM {
 	vm := &VM{
 		env: newEnv(),
 	}
-	for k, v := range basicfuncs {
+	for k, v := range basicfuncs(vm, vm.env) {
 		v.SetName(k)
 		vm.env.vars[typ.NewSymbol(k)] = v
 	}
@@ -31,6 +31,15 @@ func (v *VM) EvalNodes(nodes []parser.Node) (*typ.Cons, error) {
 	}
 	cons := typ.NewCons(vars).(*typ.Cons)
 	return v.EvalList(v.env, cons)
+}
+
+func (v *VM) EvalNodesL(nodes []parser.Node) (typ.Val, error) {
+	vars := make([]typ.Val, len(nodes))
+	for idx, node := range nodes {
+		vars[idx] = node.Val()
+	}
+	cons := typ.NewCons(vars).(*typ.Cons)
+	return v.EvalListL(v.env, cons)
 }
 
 func (v *VM) EvalList(env *env, cons *typ.Cons) (*typ.Cons, error) {
@@ -50,12 +59,24 @@ func (v *VM) EvalList(env *env, cons *typ.Cons) (*typ.Cons, error) {
 	return typ.MakeCons(car, cdr), nil
 }
 
+func (v *VM) EvalListL(env *env, cons *typ.Cons) (typ.Val, error) {
+	cons, err := v.EvalList(env, cons)
+	if err != nil {
+		return typ.Nil, err
+	}
+	array := cons.ToArray()
+	return array[len(array)-1], nil
+}
+
 func (v *VM) Eval(env *env, cons typ.Val) (typ.Val, error) {
 	fmt.Printf("[VM]Eval: %#v\n", cons)
 	switch vv := cons.(type) {
 	case typ.Symbol:
 		if vv == typ.Nil {
 			return typ.Nil, nil
+		}
+		if vv == typ.T {
+			return typ.T, nil
 		}
 		if val, ok := env.find(vv); ok {
 			return val, nil

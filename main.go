@@ -3,14 +3,37 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"ligo/lexer"
 	"ligo/parser"
 	"ligo/vm"
 	"os"
 )
 
+func processFile(fname string) string {
+	b, err := ioutil.ReadFile(fname)
+	if err != nil {
+		panic(err)
+	}
+	return string(b) + "\n"
+}
+
 func main() {
 	vm := vm.NewVM()
+	if len(os.Args) > 1 {
+		cmd := processFile(os.Args[1])
+		lexer.Lex(cmd)
+		l := lexer.Lex(cmd)
+
+		n := parser.Parse(l)
+		ret, err := vm.EvalNodesL(n)
+		if err != nil {
+			fmt.Printf("ERR> %s\n", err.Error())
+		} else {
+			fmt.Printf("RET> %s\n", ret.String())
+		}
+		return
+	}
 
 	r := bufio.NewReader(os.Stdin)
 	// l := lexer.Lex("(cons (+ 1 1) (* 3 3) 1)")
@@ -35,11 +58,11 @@ func main() {
 		for i, s := range n {
 			fmt.Printf("[PAR]\t%d\t: %s\n", i, s.Val().String())
 		}
-		ret, err := vm.EvalNodes(n)
+		ret, err := vm.EvalNodesL(n)
 		if err != nil {
 			fmt.Printf("ERR> %s\n", err.Error())
 		} else {
-			fmt.Printf("RET> %#v\n", ret)
+			fmt.Printf("RET> %s\n", ret.String())
 		}
 	}
 }

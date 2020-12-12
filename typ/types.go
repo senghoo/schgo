@@ -27,7 +27,7 @@ type Val interface {
 type Symbol string
 
 const Nil = Symbol("<nil>")
-const T = Symbol("T")
+const T = Symbol("<t>")
 
 func NewSymbol(s string) Symbol {
 	return Symbol(fmt.Sprintf("<%s>", s))
@@ -85,6 +85,14 @@ func (s Cons) String() string {
 	return fmt.Sprintf("(%s . %s)", s.Car.String(), s.Cdr.String())
 }
 
+func (s Cons) ToArray() []Val {
+	if cdr, ok := s.Cdr.(*Cons); ok {
+		return append([]Val{s.Car}, cdr.ToArray()...)
+	} else {
+		return []Val{s.Car}
+	}
+}
+
 type Vect struct {
 	Val []Val
 }
@@ -102,19 +110,25 @@ func (s Vect) String() string {
 }
 
 type Func struct {
+	env      ENV
 	name     string
 	extract  bool
-	function func(Val) (Val, error)
+	function func(ENV, Val) (Val, error)
 }
 
 var lastLambda = 1
 
-func NewFunc(name string, extract bool, f func(Val) (Val, error)) *Func {
+type ENV interface {
+	Get(Symbol) (Val, bool)
+	Set(Symbol, Val)
+}
+
+func NewFunc(e ENV, name string, extract bool, f func(ENV, Val) (Val, error)) *Func {
 	if name == "" {
 		name = fmt.Sprintf("lambda#%d", lastLambda)
 		lastLambda++
 	}
-	return &Func{name, extract, f}
+	return &Func{e, name, extract, f}
 }
 
 func (s Func) String() string {
@@ -126,7 +140,7 @@ func (s *Func) Extract() bool {
 }
 
 func (s *Func) Call(v Val) (Val, error) {
-	return s.function(v)
+	return s.function(s.env, v)
 }
 
 func (s *Func) SetName(fname string) {

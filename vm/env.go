@@ -37,3 +37,9 @@ func (e *env) find(name typ.Symbol) (typ.Val, bool) {
 func (e *env) set(name typ.Symbol, val typ.Val) {
 	e.vars[name] = val
 }
+func (e *env) Get(n typ.Symbol) (typ.Val, bool) {
+	return e.find(n)
+}
+func (e *env) Set(n typ.Symbol, v typ.Val) {
+	e.set(n, v)
+}
