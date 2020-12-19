@@ -336,6 +336,33 @@ func basicfuncs(vm *VM, e *env) map[string]*typ.Func {
 			}
 			return typ.Nil, nil
 		}),
+		"ch": typ.NewFunc(e, "", true, func(le typ.ENV, v typ.Val) (typ.Val, error) {
+			l := 0
+			if c, ok := v.(*typ.Cons); ok {
+				args := c.ToArray()
+				l = int(args[0].(typ.Int))
+			}
+			return typ.NewChan(l), nil
+		}),
+		"<-": typ.NewFunc(e, "", true, func(le typ.ENV, v typ.Val) (typ.Val, error) {
+			if c, ok := v.(*typ.Cons); ok {
+				args := c.ToArray()
+				ch := args[0].(*typ.Chan)
+				return ch.Fetch(), nil
+
+			}
+			return nil, errors.New("no channel to fetch")
+		}),
+		"->": typ.NewFunc(e, "", true, func(le typ.ENV, v typ.Val) (typ.Val, error) {
+			if c, ok := v.(*typ.Cons); ok {
+				args := c.ToArray()
+				ch := args[0].(*typ.Chan)
+				i := args[1].(typ.Int)
+				ch.Send(i)
+				return i, nil
+			}
+			return nil, errors.New("no channel to send")
+		}),
 	}
 
 }

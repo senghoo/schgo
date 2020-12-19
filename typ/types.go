@@ -167,3 +167,27 @@ func (s *Func) CallCommand(e ENV, v Val) (Val, error) {
 func (s *Func) SetName(fname string) {
 	s.name = fname
 }
+
+type Chan struct {
+	ch chan int
+}
+
+func NewChan(len int) *Chan {
+	fmt.Printf("channel with %d", len)
+	return &Chan{make(chan int, len)}
+}
+
+func (s *Chan) String() string {
+	return fmt.Sprintf("chainnel %#v", s)
+}
+
+func (s *Chan) Fetch() Val {
+	return Int(<-s.ch)
+}
+
+func (s *Chan) Send(v Val) {
+	if i, ok := v.(Int); ok {
+		s.ch <- int(i)
+	}
+	//Todo: send any type
+}

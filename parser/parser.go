@@ -146,6 +146,9 @@ func Parse(l *lexer.Lexer) []Node {
 
 func parser(l *lexer.Lexer, tree []Node, lookingFor rune) []Node {
 	for item := l.NextItem(); item.Type != lexer.ItemEOF; {
+		if item.Type == lexer.ItemError {
+			panic(fmt.Sprintf("Lexer error %s", item.Value))
+		}
 		switch t := item.Type; t {
 		case lexer.ItemIdent:
 			tree = append(tree, NewIdentNode(item.Value))

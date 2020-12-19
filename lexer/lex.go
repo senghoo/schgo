@@ -225,6 +225,9 @@ func lexComment(l *Lexer) stateFn {
 
 func lexNumber(l *Lexer) stateFn {
 	if !l.scanNumber() {
+		if l.input[l.start] < '0' || l.input[l.start] > '9' {
+			return lexIdentifier
+		}
 		return l.errorf("bad number syntax: %q", l.input[l.start:l.pos])
 	}
 
