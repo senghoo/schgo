@@ -152,13 +152,15 @@ func lexLeftParen(l *Lexer) stateFn {
 	return lexWhitespace
 }
 
-func lexWhitespace(l *Lexer) stateFn {
-	for r := l.next(); isSpace(r) || r == '\n'; l.next() {
-		r = l.peek()
+func skipWhitespace(l *Lexer) {
+	for r := l.next(); isSpace(r) || r == '\n'; r = l.next() {
 	}
 	l.backup()
 	l.ignore()
+}
 
+func lexWhitespace(l *Lexer) stateFn {
+	skipWhitespace(l)
 	switch r := l.next(); {
 	case r == EOF:
 		l.emit(ItemEOF)
@@ -226,7 +228,7 @@ func lexNumber(l *Lexer) stateFn {
 		return l.errorf("bad number syntax: %q", l.input[l.start:l.pos])
 	}
 
-	if l.start+1 == l.pos {
+	if l.start+1 == l.pos && (l.input[l.start] < '0' || l.input[l.start] > '9') {
 		return lexIdentifier
 	}
 
