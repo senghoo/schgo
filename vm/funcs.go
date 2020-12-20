@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"ligo/typ"
+	"ligo/utils"
 	"strings"
 )
 
@@ -61,6 +62,15 @@ func basicfuncs(vm *VM, e *env) map[string]*typ.Func {
 			}
 			return typ.NewIntFromInt(sum), nil
 		}),
+		"mod": typ.NewFunc(e, "", true, func(le typ.ENV, v typ.Val) (typ.Val, error) {
+			if c, ok := v.(*typ.Cons); ok {
+				args := c.ToArray()
+				x := args[0].(typ.Int)
+				y := args[1].(typ.Int)
+				return x % y, nil
+			}
+			return typ.Nil, nil
+		}),
 
 		//compare
 		">": typ.NewFunc(e, "", true, func(le typ.ENV, v typ.Val) (typ.Val, error) {
@@ -85,6 +95,7 @@ func basicfuncs(vm *VM, e *env) map[string]*typ.Func {
 			var res typ.Symbol = typ.Nil
 			var last int
 			if c, ok := v.(*typ.Cons); ok {
+				utils.Debugf("compare  %s\n", v.String())
 				last = c.Car.(typ.Int).Int()
 				res = typ.T
 				for v = c.Cdr; v != typ.Nil; v = v.(*typ.Cons).Cdr {
@@ -111,6 +122,22 @@ func basicfuncs(vm *VM, e *env) map[string]*typ.Func {
 					if last >= num {
 						last = num
 					} else {
+						return typ.Nil, nil
+					}
+				}
+			}
+			return res, nil
+		}),
+		"eq": typ.NewFunc(e, "", true, func(le typ.ENV, v typ.Val) (typ.Val, error) {
+			var res typ.Symbol = typ.Nil
+			var n int
+			if c, ok := v.(*typ.Cons); ok {
+				n = c.Car.(typ.Int).Int()
+				res = typ.T
+				for v = c.Cdr; v != typ.Nil; v = v.(*typ.Cons).Cdr {
+					arg := v.(*typ.Cons)
+					num := arg.Car.(typ.Int).Int()
+					if n != num {
 						return typ.Nil, nil
 					}
 				}
@@ -150,6 +177,18 @@ func basicfuncs(vm *VM, e *env) map[string]*typ.Func {
 				}
 			}
 			return last, nil
+		}),
+		"not": typ.NewFunc(e, "", true, func(le typ.ENV, v typ.Val) (typ.Val, error) {
+			if v == typ.Nil {
+				return typ.T, nil
+			}
+			for ; v != typ.Nil; v = v.(*typ.Cons).Cdr {
+				arg := v.(*typ.Cons)
+				if arg.Car != typ.Nil {
+					return typ.Nil, nil
+				}
+			}
+			return typ.T, nil
 		}),
 
 		"or": typ.NewFunc(e, "", true, func(le typ.ENV, v typ.Val) (typ.Val, error) {
@@ -192,37 +231,39 @@ func basicfuncs(vm *VM, e *env) map[string]*typ.Func {
 			}
 			return typ.Nil, nil
 		}),
-		"quote": typ.NewFunc(e, "", false, func(le typ.ENV, v typ.Val) (typ.Val, error) {
+		"quote": typ.NewCommand(e, "", false, func(le typ.ENV, v typ.Val) (typ.Val, error) {
 			if c, ok := v.(*typ.Cons); ok {
 				return c.Car, nil
 			}
 			return typ.Nil, nil
 		}),
-		"if": typ.NewFunc(e, "", false, func(le typ.ENV, v typ.Val) (typ.Val, error) {
-
+		"if": typ.NewCommand(e, "", false, func(le typ.ENV, v typ.Val) (typ.Val, error) {
+			le.(*env).Print()
 			if c, ok := v.(*typ.Cons); ok {
 				args := c.ToArray()
 				cond := args[0]
-				condR, err := vm.Eval(e, cond)
+				utils.Debugf("cond %s\n", cond.String())
+				condR, err := vm.Eval(le.(*env), cond)
+				utils.Debugf("condr %s\n", condR.String())
 				if err != nil {
 					return nil, err
 				}
 				if condR != typ.Nil && len(args) >= 2 {
-					return vm.Eval(e, args[1])
+					return vm.Eval(le.(*env), args[1])
 				} else if len(args) == 3 {
-					return vm.Eval(e, args[2])
+					return vm.Eval(le.(*env), args[2])
 				} else {
 					return typ.Nil, nil
 				}
 			}
 			return typ.Nil, nil
 		}),
-		"cond": typ.NewFunc(e, "", false, func(le typ.ENV, v typ.Val) (typ.Val, error) {
+		"cond": typ.NewCommand(e, "", false, func(le typ.ENV, v typ.Val) (typ.Val, error) {
 			if c, ok := v.(*typ.Cons); ok {
 				conds := c.ToArray()
 				for _, cond := range conds {
 					if clause, ok := cond.(*typ.Cons); ok {
-						fmt.Printf("[cond] checking %s\n", clause.String())
+						utils.Debugf("[cond] checking %s\n", clause.String())
 						check := false
 						if clause.Car == typ.Symbol("<else>") {
 							check = true
@@ -261,13 +302,13 @@ func basicfuncs(vm *VM, e *env) map[string]*typ.Func {
 					return typ.Nil, errors.New("incorrect lambda")
 				}
 				return typ.NewFunc(lambdaRunEnv, "", true, func(lambdaRunEnv typ.ENV, v typ.Val) (typ.Val, error) {
-					fmt.Printf("[LAMBDA] lambda running\n")
-					fmt.Printf("[LAMBDA] args %s\n", v.String())
+					utils.Debugf("[LAMBDA] lambda running\n")
+					utils.Debugf("[LAMBDA] args %s\n", v.String())
 					if ci, ok := v.(*typ.Cons); ok {
 						args := ci.ToArray()
-						fmt.Printf("[LAMBDA] args %s\n", ci.String())
+						utils.Debugf("[LAMBDA] args %s\n", ci.String())
 						if len(argN) != len(args) {
-							return typ.Nil, fmt.Errorf("require %d, but %d args", len(argN), len(args))
+							return typ.Nil, fmt.Errorf("require %d, but %d args %#v %#v", len(argN), len(args), argN, args)
 						}
 
 						arg := make(map[typ.Symbol]typ.Val)
@@ -275,6 +316,7 @@ func basicfuncs(vm *VM, e *env) map[string]*typ.Func {
 							arg[argN[i].(typ.Symbol)] = args[i]
 						}
 						funRunEnv := lambdaRunEnv.(*env).newEnv(arg)
+						funRunEnv.Print()
 						return vm.Eval(funRunEnv, body)
 					}
 					return typ.Nil, nil
@@ -309,18 +351,18 @@ func basicfuncs(vm *VM, e *env) map[string]*typ.Func {
 				for l, v := range ld {
 					res[l] = v.String()
 				}
-				fmt.Printf("STDOUT>>>>%s\n", strings.Join(res, ", "))
+				fmt.Printf("%s\n", strings.Join(res, ", "))
 			}
 			return typ.Nil, nil
 		}),
 		"go": typ.NewCommand(e, "", true, func(le typ.ENV, v typ.Val) (typ.Val, error) {
 			if c, ok := v.(*typ.Cons); ok {
 				ld := c.ToArray()
-				if len(ld) != 2 {
+				if len(ld) < 2 {
 					return typ.Nil, errors.New("incorrect go")
 				}
 				f := ld[0].(*typ.Func)
-				args := ld[1]
+				args := c.Cdr
 				go func() {
 					_, err := f.Call(args)
 					if err != nil {

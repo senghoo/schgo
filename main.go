@@ -6,9 +6,9 @@ import (
 	"io/ioutil"
 	"ligo/lexer"
 	"ligo/parser"
+	"ligo/utils"
 	"ligo/vm"
 	"os"
-	"time"
 )
 
 func processFile(fname string) string {
@@ -29,11 +29,10 @@ func main() {
 		n := parser.Parse(l)
 		ret, err := vm.EvalNodesL(n)
 		if err != nil {
-			fmt.Printf("ERR> %s\n", err.Error())
+			utils.Debugf("ERR> %s\n", err.Error())
 		} else {
-			fmt.Printf("RET> %s\n", ret.String())
+			utils.Debugf("RET> %s\n", ret.String())
 		}
-		time.Sleep(10 * time.Second)
 		return
 	}
 
@@ -41,7 +40,7 @@ func main() {
 	// l := lexer.Lex("(cons (+ 1 1) (* 3 3) 1)")
 	// l := lexer.Lex("x")
 	// for i := l.NextItem(); i.Type != lexer.ItemEOF; i = l.NextItem() {
-	// 	fmt.Printf("lex %#v\n", i)
+	// 	utils.Debugf("lex %#v\n", i)
 	// }
 
 	for {
@@ -58,13 +57,13 @@ func main() {
 
 		n := parser.Parse(l)
 		for i, s := range n {
-			fmt.Printf("[PAR]\t%d\t: %s\n", i, s.Val().String())
+			utils.Debugf("[PAR]\t%d\t: %s\n", i, s.Val().String())
 		}
 		ret, err := vm.EvalNodesL(n)
 		if err != nil {
-			fmt.Printf("ERR> %s\n", err.Error())
+			utils.Debugf("ERR> %s\n", err.Error())
 		} else {
-			fmt.Printf("RET> %s\n", ret.String())
+			utils.Debugf("RET> %s\n", ret.String())
 		}
 	}
 }

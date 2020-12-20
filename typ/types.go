@@ -122,7 +122,6 @@ var lastLambda = 1
 type ENV interface {
 	Get(Symbol) (Val, bool)
 	Set(Symbol, Val)
-	NewWith(ENV) ENV
 }
 
 func NewFunc(e ENV, name string, extract bool, f func(ENV, Val) (Val, error)) *Func {
@@ -145,7 +144,7 @@ func (s Func) IsCommand() bool {
 }
 
 func (s Func) String() string {
-	return fmt.Sprint("func: %s", s.name)
+	return fmt.Sprintf("func: %s", s.name)
 }
 
 func (s *Func) Extract() bool {
@@ -154,10 +153,6 @@ func (s *Func) Extract() bool {
 
 func (s *Func) Call(v Val) (Val, error) {
 	return s.function(s.env, v)
-}
-
-func (s *Func) CallWithEnv(e ENV, v Val) (Val, error) {
-	return s.function(s.env.NewWith(e), v)
 }
 
 func (s *Func) CallCommand(e ENV, v Val) (Val, error) {
@@ -173,7 +168,6 @@ type Chan struct {
 }
 
 func NewChan(len int) *Chan {
-	fmt.Printf("channel with %d", len)
 	return &Chan{make(chan int, len)}
 }
 

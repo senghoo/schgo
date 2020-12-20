@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"ligo/parser"
 	"ligo/typ"
+	"ligo/utils"
 )
 
 type VM struct {
@@ -69,7 +70,7 @@ func (v *VM) EvalListL(env *env, cons *typ.Cons) (typ.Val, error) {
 }
 
 func (v *VM) Eval(env *env, cons typ.Val) (typ.Val, error) {
-	fmt.Printf("[VM]Eval: %#v\n", cons)
+	utils.Debugf("[VM]Eval: %#v\n", cons)
 	switch vv := cons.(type) {
 	case typ.Symbol:
 		if vv == typ.Nil {
@@ -92,8 +93,8 @@ func (v *VM) Eval(env *env, cons typ.Val) (typ.Val, error) {
 }
 
 func (v *VM) call(env *env, callee typ.Val, args typ.Val) (typ.Val, error) {
-	fmt.Printf("[vm]callee %#s\n", callee.String())
-	fmt.Printf("[vm]args %#s\n", args.String())
+	utils.Debugf("[vm]callee %#s\n", callee.String())
+	utils.Debugf("[vm]args %#s\n", args.String())
 	fv, err := v.Eval(env, callee)
 	if err != nil {
 		return nil, err

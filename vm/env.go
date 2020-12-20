@@ -1,11 +1,13 @@
 package vm
 
-import "ligo/typ"
+import (
+	"ligo/typ"
+	"ligo/utils"
+)
 
 type env struct {
 	parent *env
 	vars   map[typ.Symbol]typ.Val
-	dny    *env
 }
 
 func newEnv() *env {
@@ -36,26 +38,22 @@ func (e *env) find(name typ.Symbol) (typ.Val, bool) {
 }
 
 func (e *env) set(name typ.Symbol, val typ.Val) {
-	if e.dny != nil {
-		e.dny.set(name, val)
-		return
-	}
 	e.vars[name] = val
 }
 func (e *env) Get(n typ.Symbol) (typ.Val, bool) {
-	if e.dny != nil {
-		if v, ok := e.dny.find(n); ok {
-			return v, ok
-		}
-	}
 	return e.find(n)
 }
 func (e *env) Set(n typ.Symbol, v typ.Val) {
 	e.set(n, v)
 }
 
-func (e *env) NewWith(n typ.ENV) typ.ENV {
-	ne := e.newEnv()
-	ne.dny = n.(*env)
-	return ne
+func (e *env) Print() string {
+	var prefix string
+	if e != e.parent {
+		prefix = e.parent.Print()
+	}
+	for k, v := range e.vars {
+		utils.Debugf("%s|%s: %s\n", prefix, k.String(), v.String())
+	}
+	return prefix + "\t"
 }
