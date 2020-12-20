@@ -43,6 +43,9 @@ func main() {
 	// 	utils.Debugf("lex %#v\n", i)
 	// }
 
+	fmt.Print(banner)
+	fmt.Println("Welcom to Schgo!")
+	fmt.Println("This is course It was done as part of the BUAA PL course in 2020.")
 	for {
 		fmt.Print(">> ")
 		line, _, _ := r.ReadLine()
@@ -67,3 +70,5 @@ func main() {
 		}
 	}
 }
+
+var banner = " \n .-')               ('-. .-. \n ( OO ).            ( OO )  / \n (_)---\\_)   .-----. ,--. ,--.  ,----.     .-'),-----. \n /    _ |   '  .--./ |  | |  | '  .-./-') ( OO'  .-.  ' \n \\  :` `.   |  |('-. |   .|  | |  |_( O- )/   |  | |  | \n '..`''.) /_) |OO  )|       | |  | .--, \\\\_) |  |\\|  | \n .-._)   \\ ||  |`-'| |  .-.  |(|  | '. (_/  \\ |  | |  | \n \\       /(_'  '--'\\ |  | |  | |  '--'  |    `'  '-'  ' \n `-----'    `-----' `--' `--'  `------'       `-----' \n "
