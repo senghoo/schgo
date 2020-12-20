@@ -64,9 +64,9 @@ func main() {
 		}
 		ret, err := vm.EvalNodesL(n)
 		if err != nil {
-			utils.Debugf("ERR> %s\n", err.Error())
+			fmt.Printf("ERR> %s\n", err.Error())
 		} else {
-			utils.Debugf("RET> %s\n", ret.String())
+			fmt.Printf("RET> %s\n", ret.String())
 		}
 	}
 }
